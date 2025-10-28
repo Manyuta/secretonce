@@ -2,7 +2,7 @@ use crate::state::AppState;
 use axum::{
     Router,
     response::Html,
-    routing::{delete, get, post},
+    routing::{get, post},
 };
 use tower_http::cors::CorsLayer;
 

@@ -8,12 +8,10 @@ use tracing_subscriber;
 
 #[tokio::main]
 async fn main() -> Result<(), ApiError> {
-    // Initialize tracing
     tracing_subscriber::fmt::init();
 
     let config = Config::from_env().expect("Failed toparse env config");
 
-    println!("{:?}", config);
     let state = AppState::new(config.clone()).await?;
 
     // Start cleanup task
