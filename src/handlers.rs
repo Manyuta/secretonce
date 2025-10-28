@@ -1,9 +1,8 @@
 use axum::{
+    Json,
     extract::{Form, Path, State},
     response::{Html, IntoResponse, Redirect, Response},
-    Json,
 };
-//use chrono::Utc;
 
 use uuid::Uuid;
 
@@ -415,7 +414,7 @@ pub async fn _view_secret_page(
                     .replace("{{SECRET_VALUE}}", "❌ Invalid secret URL")
                     .replace("{{RECIPIENT}}", "N/A")
                     .replace("{{TTL_REMAINING}}", "0"),
-            )
+            );
         }
     };
 
@@ -432,7 +431,7 @@ pub async fn _view_secret_page(
                     .replace("{{SECRET_VALUE}}", "❌ Secret not found or already viewed")
                     .replace("{{RECIPIENT}}", "N/A")
                     .replace("{{TTL_REMAINING}}", "0"),
-            )
+            );
         }
         Err(_) => {
             return Html(
@@ -440,7 +439,7 @@ pub async fn _view_secret_page(
                     .replace("{{SECRET_VALUE}}", "❌ Error retrieving secret")
                     .replace("{{RECIPIENT}}", "N/A")
                     .replace("{{TTL_REMAINING}}", "0"),
-            )
+            );
         }
     };
 
@@ -485,7 +484,7 @@ pub async fn _view_secret_page(
                     .replace("{{SECRET_VALUE}}", "❌ Error decrypting secret")
                     .replace("{{RECIPIENT}}", "N/A")
                     .replace("{{TTL_REMAINING}}", "0"),
-            )
+            );
         }
     };
 
@@ -743,12 +742,12 @@ pub async fn delete_secret(
 pub struct HealthCheckResponse {
     pub status: String,
     pub database: String,
-    pub timestamp: chrono::DateTime<chrono::Utc>,
+    pub timestamp: time::OffsetDateTime,
     pub version: String,
 }
 
 pub async fn health_check(State(state): State<crate::state::AppState>) -> impl IntoResponse {
-    let timestamp = chrono::Utc::now();
+    let timestamp = time::OffsetDateTime::now_utc();
 
     // Test database connection by doing a simple query
     let db_status = match state.storage.cleanup_expired().await {

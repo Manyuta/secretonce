@@ -1,4 +1,3 @@
-// use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use time::OffsetDateTime;
@@ -26,9 +25,9 @@ pub struct SecretFromRow {
     pub recipient: Option<String>,
     pub passphrase_required: bool,
     pub burn_after_reading: bool,
-    pub access_count: i32, // Database returns i32
-    pub max_views: i32,    // Database returns i32
-    pub ttl_minutes: i32,  // Database returns i32
+    pub access_count: i32,
+    pub max_views: i32,
+    pub ttl_minutes: i32,
     pub created_at: OffsetDateTime,
 }
 
