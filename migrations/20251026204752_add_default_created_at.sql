@@ -1,0 +1,2 @@
+ALTER TABLE secrets 
+ALTER COLUMN created_at SET DEFAULT NOW();

@@ -1,0 +1,3 @@
+ALTER TABLE secrets ADD COLUMN secret_key TEXT;
+
+ALTER TABLE secrets ALTER COLUMN secret_key SET NOT NULL;

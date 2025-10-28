@@ -1,0 +1,51 @@
+name: secretonce
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: secretonce-backend
+    env_file:
+      - .env
+    networks:
+      - server-side
+    volumes:
+      - ./migrations:/app/migrations
+      - app-cache:/app/target
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:12-alpine
+    container_name: secretonce-db
+    restart: always
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    networks:
+      - server-side
+    ports:
+      - "5433:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U capstone -d onetimesecret"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+
+# Shared network between backend and database
+networks:
+  server-side:
+    driver: bridge
+
+# Persistent volume for Postgres data
+volumes:
+  app-cache: {}
+  db-data: {}
