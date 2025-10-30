@@ -140,7 +140,7 @@ const SECRET_HTML: &str = r#"
 <!DOCTYPE html>
 <html>
 <head>
-    <title>One-Time Secret</title>
+    <title>Share a Secret</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
@@ -188,7 +188,7 @@ const SECRET_HTML: &str = r#"
 </head>
 <body>
     <div class="secret-container">
-        <h1>🔒 One-Time Secret</h1>
+        <h1>🔒 Share a Secret</h1>
         <div class="warning">
             ⚠️ This secret can only be viewed once and will be destroyed after reading.
         </div>
@@ -280,7 +280,7 @@ pub async fn view_secret_page(
         <!DOCTYPE html>
         <html>
         <head>
-            <title>One-Time Secret - Passphrase Required</title>
+            <title>Share a Secret - Passphrase Required</title>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <style>
@@ -325,7 +325,7 @@ pub async fn view_secret_page(
         </head>
         <body>
             <div class="container">
-                <h1>🔒 One-Time Secret</h1>
+                <h1>🔒 Share a Secret</h1>
                 <div class="warning">
                     ⚠️ This secret is protected by a passphrase.
                 </div>
