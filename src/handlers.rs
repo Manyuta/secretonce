@@ -421,8 +421,6 @@ pub async fn _view_secret_page(
     // Try to retrieve the secret without passphrase first
     let result = state.storage.get_secret(&id).await;
 
-    dbg!(&result);
-
     let secret = match result {
         Ok(Some(secret)) => secret,
         Ok(None) => {
@@ -442,8 +440,6 @@ pub async fn _view_secret_page(
             );
         }
     };
-
-    dbg!(&secret);
 
     // Check if secret has expired
     let expires_at = secret.created_at + time::Duration::minutes(secret.ttl_minutes);
@@ -614,7 +610,6 @@ pub async fn create_secret(
 
     tracing::debug!("Secret created successfully: {}", response.metadata_key);
 
-    // Return 201 Created with the response
     Ok((axum::http::StatusCode::CREATED, Json(response)))
 }
 
@@ -663,7 +658,6 @@ pub async fn retrieve_secret(
         }
     }
 
-    // DECRYPT THE SECRET HERE
     let decrypted_value = state
         .encryption
         .decrypt(&secret.ciphertext, &secret.secret_key)
@@ -672,9 +666,9 @@ pub async fn retrieve_secret(
             ApiError::new(format!("Failed to decrypt secret: {}", e), 500)
         })?;
 
-    // Update access count
     secret.access_count += 1;
     state.storage.update_secret(secret.clone()).await?;
+
     let response = RetrieveSecretResponse {
         value: decrypted_value,
         recipient: secret.metadata.recipient.clone(),
@@ -693,15 +687,12 @@ pub async fn get_secret_metadata(
     Path(metadata_key): Path<String>,
 ) -> ApiResult<impl IntoResponse> {
     let id = Uuid::parse_str(&metadata_key).map_err(|_| ApiError::new("Invalid secret ID", 400))?;
-    dbg!(id);
 
     let secret = state
         .storage
         .get_secret(&id)
         .await?
         .ok_or_else(|| ApiError::new("Secret not found", 404))?;
-
-    dbg!(&secret);
 
     let expires_at = secret.created_at + time::Duration::minutes(secret.ttl_minutes);
     let ttl_remaining = (expires_at - time::OffsetDateTime::now_utc())
@@ -721,8 +712,6 @@ pub async fn get_secret_metadata(
         ttl_remaining,
         created_at: secret.created_at,
     };
-
-    dbg!(&response);
 
     Ok(Json(response))
 }
@@ -749,7 +738,7 @@ pub struct HealthCheckResponse {
 pub async fn health_check(State(state): State<crate::state::AppState>) -> impl IntoResponse {
     let timestamp = time::OffsetDateTime::now_utc();
 
-    // Test database connection by doing a simple query
+    // Test database connection
     let db_status = match state.storage.cleanup_expired().await {
         Ok(_) => "connected".to_string(),
         Err(e) => format!("disconnected: {}", e),

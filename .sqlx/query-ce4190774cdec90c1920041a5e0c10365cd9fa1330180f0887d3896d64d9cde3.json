@@ -1,0 +1,82 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT \n                id, ciphertext, secret_key, passphrase, recipient, passphrase_required,\n                burn_after_reading, access_count, max_views, ttl_minutes, created_at\n            FROM secrets \n            WHERE id = $1 AND expires_at > NOW()\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "ciphertext",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "secret_key",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "passphrase",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "recipient",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "passphrase_required",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "burn_after_reading",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "access_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "max_views",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 9,
+        "name": "ttl_minutes",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 10,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "ce4190774cdec90c1920041a5e0c10365cd9fa1330180f0887d3896d64d9cde3"
+}
