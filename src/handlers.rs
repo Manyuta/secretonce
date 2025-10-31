@@ -443,6 +443,54 @@ pub async fn retrieve_secret(
     Ok(Json(response))
 }
 
+pub async fn get_secret_metadata(
+    State(state): State<AppState>,
+    Path(metadata_key): Path<String>,
+) -> ApiResult<impl IntoResponse> {
+    let id = Uuid::parse_str(&metadata_key).map_err(|_| ApiError::new("Invalid secret ID", 400))?;
+
+    let secret = state
+        .storage
+        .get_secret(&id)
+        .await?
+        .ok_or_else(|| ApiError::new("Secret not found", 404))?;
+
+    let expires_at = secret.created_at + time::Duration::minutes(secret.ttl_minutes);
+    let ttl_remaining = (expires_at - time::OffsetDateTime::now_utc())
+        .whole_minutes()
+        .max(0);
+
+    if ttl_remaining <= 0 {
+        if let Err(e) = state.storage.delete_secret(&id).await {
+            tracing::error!("Failked to delete a secret: {e}");
+        }
+        return Err(ApiError::new("Secret not found", 404));
+    }
+
+    let response = SecretMetadataResponse {
+        // recipient: secret.metadata.recipient,
+        passphrase_required: secret.passphrase_required,
+        views_remaining: secret.max_views.saturating_sub(secret.access_count),
+        ttl_remaining,
+        created_at: secret.created_at,
+    };
+
+    Ok(Json(response))
+}
+
+pub async fn delete_secret(
+    State(state): State<AppState>,
+    Path(metadata_key): Path<String>,
+) -> ApiResult<impl IntoResponse> {
+    let id = Uuid::parse_str(&metadata_key).map_err(|_| ApiError::new("Invalid secret ID", 400))?;
+
+    if let Err(e) = state.storage.delete_secret(&id).await {
+        tracing::error!("Failed to delete a secret {e}");
+    };
+
+    Ok(axum::http::StatusCode::NO_CONTENT)
+}
+
 #[derive(serde::Serialize)]
 pub struct HealthCheckResponse {
     pub status: String,
