@@ -5,6 +5,6 @@ database:
   require_ssl: false
   host: "db"
   port: 5432
-  username: "capstone"
-  password: "rodajaderejo_155"
-  database_name: "onetimesecret"
+  username: "capstone_user"
+  password: "mystrongpassword"
+  database_name: "secrets"
