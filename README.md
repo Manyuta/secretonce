@@ -15,3 +15,13 @@ Secrets are encrypted at rest using modern cryptography and optionally protected
 - REST API for creating and retrieving secrets.
 - Web interface to view secrets.
 
+### How It Works
+
+- Create a Message: Write a message you wish to send.
+- Set Expiration and Lifetime: Choose how long the message will be available before it expires and whether it can be viewed only once.
+- Send the Message: Once sent, the link will be generated to access the message. The message can only be viewed specified number of times, once by default.
+- Automatic Deletion: After being viewed or after expiration, the message is permanently deleted.
+
+
+
+
