@@ -469,7 +469,7 @@ pub async fn get_secret_metadata(
 
     if ttl_remaining <= 0 {
         if let Err(e) = state.storage.delete_secret(&id).await {
-            tracing::error!("Failked to delete a secret: {e}");
+            tracing::error!("Failed to delete a secret: {e}");
         }
         return Err(ApiError::new("Secret not found", 404));
     }
@@ -495,6 +495,17 @@ pub async fn delete_secret(
     };
 
     Ok(axum::http::StatusCode::NO_CONTENT)
+}
+
+// For internal database query
+pub async fn get_secret(
+    State(state): State<AppState>,
+    Path(metadata_key): Path<String>,
+) -> ApiResult<impl IntoResponse> {
+    let id = Uuid::parse_str(&metadata_key)?;
+    // get secret from storage
+    let secret = state.storage.get_secret(&id).await?;
+    Ok(Json(secret))
 }
 
 #[derive(serde::Serialize)]

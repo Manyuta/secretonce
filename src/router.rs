@@ -25,6 +25,10 @@ pub fn create_router(state: AppState) -> Router {
                 .get(crate::handlers::get_secret_metadata)
                 .delete(crate::handlers::delete_secret),
         )
+        .route(
+            "/api/v1/internal/secret/:metadata_key",
+            get(crate::handlers::get_secret),
+        )
         .layer(CorsLayer::permissive())
         .with_state(state)
 }

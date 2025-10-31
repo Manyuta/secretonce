@@ -12,6 +12,7 @@ pub struct Secret {
     pub access_count: u32,
     pub max_views: u32,
     pub ttl_minutes: i64,
+    #[serde(with = "time::serde::rfc3339")]
     pub created_at: OffsetDateTime,
     pub secret_key: String,
 }
@@ -43,6 +44,7 @@ pub struct CreateSecretResponse {
     pub metadata_key: String,
     pub secret_url: String,
     pub ttl: u32,
+    #[serde(with = "time::serde::rfc3339")]
     pub created_at: OffsetDateTime,
 }
 
@@ -64,5 +66,6 @@ pub struct SecretMetadataResponse {
     pub passphrase_required: bool,
     pub views_remaining: u32,
     pub ttl_remaining: i64,
+    #[serde(with = "time::serde::rfc3339")]
     pub created_at: OffsetDateTime,
 }
