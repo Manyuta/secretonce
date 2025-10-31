@@ -1,3 +1,5 @@
+***The project is a final capstone project of rustcamp.***
+
 ### Secret Viewer Application
 
 A secure web application written in Rust that allows users to create secrets that can be viewed a limited number of times and/or expire after a time-to-live (TTL).
