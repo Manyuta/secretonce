@@ -4,9 +4,8 @@ use axum::{
     response::{Html, IntoResponse, Redirect, Response},
 };
 
-use uuid::Uuid;
-
 use crate::{encryption::EncryptionService, error::ApiError, models::*, state::AppState};
+use uuid::Uuid;
 
 pub type ApiResult<T> = Result<T, ApiError>;
 
@@ -30,6 +29,10 @@ impl IntoResponse for SecretResponse {
     }
 }
 
+// Templates
+const SECRET_HTML: &str = include_str!("../templates/display_secret.html");
+const PASSPHRASE_FORM_TEMPLATE: &str = include_str!("../templates/passphrase_input_form.html");
+
 pub async fn verify_passphrase(
     State(state): State<crate::state::AppState>,
     Form(form): Form<VerifyPassphraseForm>,
@@ -45,7 +48,7 @@ pub async fn verify_passphrase(
     };
 
     // Get the secret from storage
-    let mut secret = match state.storage.get_secret(&id).await {
+    let secret = match state.storage.get_secret(&id).await {
         Ok(Some(secret)) => secret,
         Ok(None) => {
             return SecretResponse::Redirect(Redirect::to(&format!(
@@ -123,84 +126,15 @@ pub async fn verify_passphrase(
         )));
     }
 
-    let recipient = "Anyone".to_string(); // TODO: get recipient from secret.metadata
     let views_remaining = &secret.max_views.saturating_sub(secret.access_count);
 
     let html = SECRET_HTML
         .replace("{{SECRET_VALUE}}", &decrypted_secret)
-        .replace("{{RECIPIENT}}", &recipient)
         .replace("{{TTL_REMAINING}}", &ttl_remaining.to_string())
         .replace("{{VIEWS_REMAINING}}", &views_remaining.to_string());
 
     SecretResponse::Html(Html(html))
 }
-
-// HTML template for displaying the secret
-const SECRET_HTML: &str = r#"
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Share a Secret</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .secret-container {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .secret-value {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 4px;
-            border-left: 4px solid #007bff;
-            word-break: break-all;
-            font-family: monospace;
-            margin: 20px 0;
-        }
-        .warning {
-            color: #856404;
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            padding: 10px;
-            border-radius: 4px;
-            margin: 20px 0;
-        }
-        .btn {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-        }
-    </style>
-</head>
-<body>
-    <div class="secret-container">
-        <h1>🔒 Share a Secret</h1>
-        <div class="warning">
-            ⚠️ This secret can only be viewed once and will be destroyed after reading.
-        </div>
-        <p><strong>Secret:</strong></p>
-        <div class="secret-value">{{SECRET_VALUE}}</div>
-        <p><strong>Recipient:</strong> {{RECIPIENT}}</p>
-        <p><strong>Expires in:</strong> {{TTL_REMAINING}} minutes</p>
-        <a href="/" class="btn">Create New Secret</a>
-    </div>
-</body>
-</html>
-"#;
 
 pub async fn view_secret_page(
     State(state): State<crate::state::AppState>,
@@ -213,8 +147,7 @@ pub async fn view_secret_page(
         Err(_) => {
             tracing::warn!("Invalid UUID format: {}", metadata_key);
             let html = SECRET_HTML
-                .replace("{{SECRET_VALUE}}", "❌ Invalid secret URL")
-                .replace("{{RECIPIENT}}", "N/A")
+                .replace("{{SECRET_VALUE}}", "Invalid secret URL")
                 .replace("{{TTL_REMAINING}}", "0")
                 .replace("{{VIEWS_REMAINING}}", "0");
             return Html(html);
@@ -227,8 +160,7 @@ pub async fn view_secret_page(
         Ok(None) => {
             tracing::warn!("Secret not found: {}", id);
             let html = SECRET_HTML
-                .replace("{{SECRET_VALUE}}", "❌ Secret not found or already viewed")
-                .replace("{{RECIPIENT}}", "N/A")
+                .replace("{{SECRET_VALUE}}", "Secret not found or already viewed")
                 .replace("{{TTL_REMAINING}}", "0")
                 .replace("{{VIEWS_REMAINING}}", "0");
             return Html(html);
@@ -236,8 +168,7 @@ pub async fn view_secret_page(
         Err(e) => {
             tracing::error!("Storage error when getting secret {}: {}", id, e);
             let html = SECRET_HTML
-                .replace("{{SECRET_VALUE}}", "❌ Error retrieving secret")
-                .replace("{{RECIPIENT}}", "N/A")
+                .replace("{{SECRET_VALUE}}", "Error retrieving secret")
                 .replace("{{TTL_REMAINING}}", "0")
                 .replace("{{VIEWS_REMAINING}}", "0");
             return Html(html);
@@ -252,10 +183,10 @@ pub async fn view_secret_page(
 
     if ttl_remaining <= 0 {
         tracing::info!("Secret expired, deleting: {}", id);
+
         let _ = state.storage.delete_secret(&id).await;
         let html = SECRET_HTML
-            .replace("{{SECRET_VALUE}}", "❌ Secret has expired")
-            .replace("{{RECIPIENT}}", "N/A")
+            .replace("{{SECRET_VALUE}}", "Secret has expired")
             .replace("{{TTL_REMAINING}}", "0")
             .replace("{{VIEWS_REMAINING}}", "0");
         return Html(html);
@@ -266,83 +197,15 @@ pub async fn view_secret_page(
         tracing::info!("Secret max views reached, deleting: {}", id);
         let _ = state.storage.delete_secret(&id).await;
         let html = SECRET_HTML
-            .replace("{{SECRET_VALUE}}", "❌ Secret has already been viewed")
-            .replace("{{RECIPIENT}}", "N/A")
+            .replace("{{SECRET_VALUE}}", "Secret has already been viewed")
             .replace("{{TTL_REMAINING}}", "0")
             .replace("{{VIEWS_REMAINING}}", "0");
         return Html(html);
     }
 
     // Check if passphrase is required
-    if secret.metadata.passphrase_required {
-        // Show passphrase input form
-        let passphrase_form = r#"
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Share a Secret - Passphrase Required</title>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <style>
-                body {
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    max-width: 600px;
-                    margin: 0 auto;
-                    padding: 20px;
-                    background-color: #f5f5f5;
-                }
-                .container {
-                    background: white;
-                    padding: 30px;
-                    border-radius: 8px;
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                }
-                input {
-                    width: 100%;
-                    padding: 10px;
-                    margin: 10px 0;
-                    border: 1px solid #ddd;
-                    border-radius: 4px;
-                }
-                button {
-                    background: #007bff;
-                    color: white;
-                    border: none;
-                    padding: 12px 24px;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-size: 16px;
-                }
-                .warning {
-                    color: #856404;
-                    background-color: #fff3cd;
-                    border: 1px solid #ffeaa7;
-                    padding: 10px;
-                    border-radius: 4px;
-                    margin: 20px 0;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>🔒 Share a Secret</h1>
-                <div class="warning">
-                    ⚠️ This secret is protected by a passphrase.
-                </div>
-                <p>Please enter the passphrase to view the secret:</p>
-                <form method="POST" action="/secret/verify">
-                    <input type="hidden" name="secret_id" value="{{SECRET_ID}}">
-                    <input type="password" name="passphrase" placeholder="Enter passphrase" required>
-                    <button type="submit">View Secret</button>
-                </form>
-                <p><strong>Expires in:</strong> {{TTL_REMAINING}} minutes</p>
-                <p><strong>Views remaining:</strong> {{VIEWS_REMAINING}}</p>
-            </div>
-        </body>
-        </html>
-        "#;
-
-        let html = passphrase_form
+    if secret.passphrase_required {
+        let html = PASSPHRASE_FORM_TEMPLATE
             .replace("{{SECRET_ID}}", &metadata_key)
             .replace("{{TTL_REMAINING}}", &ttl_remaining.to_string())
             .replace(
@@ -368,8 +231,7 @@ pub async fn view_secret_page(
         Err(e) => {
             tracing::error!("Failed to decrypt secret {}: {}", id, e);
             let html = SECRET_HTML
-                .replace("{{SECRET_VALUE}}", "❌ Error decrypting secret")
-                .replace("{{RECIPIENT}}", "N/A")
+                .replace("{{SECRET_VALUE}}", "Error decrypting secret")
                 .replace("{{TTL_REMAINING}}", "0")
                 .replace("{{VIEWS_REMAINING}}", "0");
             return Html(html);
@@ -384,15 +246,10 @@ pub async fn view_secret_page(
         tracing::error!("Failed to update secret access count {}: {}", id, e);
     }
 
-    let recipient = secret
-        .metadata
-        .recipient
-        .unwrap_or_else(|| "Anyone".to_string());
     let views_remaining = secret.max_views.saturating_sub(secret.access_count + 1);
 
     let html = SECRET_HTML
         .replace("{{SECRET_VALUE}}", &decrypted_secret)
-        .replace("{{RECIPIENT}}", &recipient)
         .replace("{{TTL_REMAINING}}", &ttl_remaining.to_string())
         .replace("{{VIEWS_REMAINING}}", &views_remaining.to_string());
 
@@ -411,8 +268,7 @@ pub async fn _view_secret_page(
         Err(_) => {
             return Html(
                 SECRET_HTML
-                    .replace("{{SECRET_VALUE}}", "❌ Invalid secret URL")
-                    .replace("{{RECIPIENT}}", "N/A")
+                    .replace("{{SECRET_VALUE}}", "Invalid secret URL")
                     .replace("{{TTL_REMAINING}}", "0"),
             );
         }
@@ -426,16 +282,14 @@ pub async fn _view_secret_page(
         Ok(None) => {
             return Html(
                 SECRET_HTML
-                    .replace("{{SECRET_VALUE}}", "❌ Secret not found or already viewed")
-                    .replace("{{RECIPIENT}}", "N/A")
+                    .replace("{{SECRET_VALUE}}", "Secret not found or already viewed")
                     .replace("{{TTL_REMAINING}}", "0"),
             );
         }
         Err(_) => {
             return Html(
                 SECRET_HTML
-                    .replace("{{SECRET_VALUE}}", "❌ Error retrieving secret")
-                    .replace("{{RECIPIENT}}", "N/A")
+                    .replace("{{SECRET_VALUE}}", "Error retrieving secret")
                     .replace("{{TTL_REMAINING}}", "0"),
             );
         }
@@ -451,8 +305,7 @@ pub async fn _view_secret_page(
         let _ = state.storage.delete_secret(&id).await;
         return Html(
             SECRET_HTML
-                .replace("{{SECRET_VALUE}}", "❌ Secret has expired")
-                .replace("{{RECIPIENT}}", "N/A")
+                .replace("{{SECRET_VALUE}}", "Secret has expired")
                 .replace("{{TTL_REMAINING}}", "0"),
         );
     }
@@ -462,8 +315,7 @@ pub async fn _view_secret_page(
         let _ = state.storage.delete_secret(&id).await;
         return Html(
             SECRET_HTML
-                .replace("{{SECRET_VALUE}}", "❌ Secret has already been viewed")
-                .replace("{{RECIPIENT}}", "N/A")
+                .replace("{{SECRET_VALUE}}", "Secret has already been viewed")
                 .replace("{{TTL_REMAINING}}", "0"),
         );
     }
@@ -477,8 +329,7 @@ pub async fn _view_secret_page(
         Err(_) => {
             return Html(
                 SECRET_HTML
-                    .replace("{{SECRET_VALUE}}", "❌ Error decrypting secret")
-                    .replace("{{RECIPIENT}}", "N/A")
+                    .replace("{{SECRET_VALUE}}", "Error decrypting secret")
                     .replace("{{TTL_REMAINING}}", "0"),
             );
         }
@@ -489,15 +340,9 @@ pub async fn _view_secret_page(
     updated_secret.access_count += 1;
     let _ = state.storage.update_secret(updated_secret).await;
 
-    let recipient = secret
-        .metadata
-        .recipient
-        .unwrap_or_else(|| "Anyone".to_string());
-    let views_remaining = secret.max_views.saturating_sub(secret.access_count + 1);
-
     let html = SECRET_HTML
         .replace("{{SECRET_VALUE}}", &decrypted_secret)
-        .replace("{{RECIPIENT}}", &recipient)
+        //.replace("{{RECIPIENT}}", &recipient)
         .replace("{{TTL_REMAINING}}", &ttl_remaining.to_string());
 
     Html(html)
@@ -583,11 +428,7 @@ pub async fn create_secret(
         ciphertext,
         secret_key: secret_key.clone(),
         passphrase: hashed_passphrase,
-        metadata: SecretMetadata {
-            recipient: req.recipient.clone(),
-            passphrase_required: req.passphrase.is_some(),
-            burn_after_reading: max_views == 1,
-        },
+        passphrase_required: req.passphrase.is_some(),
         access_count: 0,
         max_views,
         ttl_minutes: ttl as i64,
@@ -605,7 +446,7 @@ pub async fn create_secret(
         secret_url,
         ttl,
         created_at: time::OffsetDateTime::now_utc(),
-        recipient: req.recipient.clone(),
+        // recipient: req.recipient.clone(),
     };
 
     tracing::debug!("Secret created successfully: {}", response.metadata_key);
@@ -640,7 +481,7 @@ pub async fn retrieve_secret(
     }
 
     // Check passphrase if required
-    if secret.metadata.passphrase_required {
+    if secret.passphrase_required {
         let passphrase = req
             .as_ref()
             .and_then(|r| r.passphrase.as_ref())
@@ -671,8 +512,7 @@ pub async fn retrieve_secret(
 
     let response = RetrieveSecretResponse {
         value: decrypted_value,
-        recipient: secret.metadata.recipient.clone(),
-        passphrase_required: secret.metadata.passphrase_required,
+        passphrase_required: secret.passphrase_required,
         views_remaining: secret.max_views.saturating_sub(secret.access_count),
         ttl_remaining: (expires_at - time::OffsetDateTime::now_utc())
             .whole_minutes()
@@ -705,9 +545,8 @@ pub async fn get_secret_metadata(
     }
 
     let response = SecretMetadataResponse {
-        recipient: secret.metadata.recipient,
-        passphrase_required: secret.metadata.passphrase_required,
-        burn_after_reading: secret.metadata.burn_after_reading,
+        // recipient: secret.metadata.recipient,
+        passphrase_required: secret.passphrase_required,
         views_remaining: secret.max_views.saturating_sub(secret.access_count),
         ttl_remaining,
         created_at: secret.created_at,

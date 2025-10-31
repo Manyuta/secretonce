@@ -13,7 +13,6 @@ pub struct AppState {
 impl AppState {
     pub async fn new(config: crate::config::Config) -> Result<Self, ApiError> {
         let storage: Arc<dyn SecretStorage> = {
-            // Use PostgreSQL
             let postgres_storage =
                 PostgresStorage::new(&config.database.connection_string()).await?;
             Arc::new(postgres_storage)

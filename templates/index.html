@@ -56,7 +56,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🔒 Share a Secret</h1>
+        <h1>Share a Secret</h1>
         <p>Share sensitive information securely. Secrets are encrypted and can only be viewed once.</p>
         
         <form id="secretForm">
@@ -68,10 +68,10 @@
         </form>
 
         <div id="result" class="result">
-            <h3>✅ Secret Created!</h3>
+            <h3>Secret Created!</h3>
             <p>Share this URL (can only be viewed once):</p>
             <div class="url" id="secretUrl"></div>
-            <button id="copyBtn">📋 Copy URL</button>
+            <button id="copyBtn">Copy URL</button>
             <p><small>The secret will be automatically deleted after viewing or when it expires.</small></p>
         </div>
     </div>
@@ -88,7 +88,6 @@
             const secret = document.getElementById('secret').value;
             const ttl = document.getElementById('ttl').value || 1440;
             const maxViews = document.getElementById('maxViews').value || 1;
-            //const recipient = document.getElementById('recipient').value || null;
             const passphrase = document.getElementById('passphrase').value || null;
 
             try {
@@ -99,7 +98,6 @@
                         secret,
                         ttl: parseInt(ttl),
                         max_views: parseInt(maxViews),
-                        //recipient: recipient || null,
                         passphrase: passphrase || null,
                     })
                 });

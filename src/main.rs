@@ -10,7 +10,7 @@ use tracing_subscriber;
 async fn main() -> Result<(), ApiError> {
     tracing_subscriber::fmt::init();
 
-    let config = Config::from_env().expect("Failed toparse env config");
+    let config = Config::from_env().expect("Failed to parse env config");
 
     let state = AppState::new(config.clone()).await?;
 

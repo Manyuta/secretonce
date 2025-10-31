@@ -25,28 +25,24 @@ impl fmt::Display for ApiError {
 
 impl std::error::Error for ApiError {}
 
-// Implement From for SQLx errors
 impl From<sqlx::Error> for ApiError {
     fn from(err: sqlx::Error) -> Self {
         Self::new(format!("Database error: {}", err), 500)
     }
 }
 
-// Implement From for Migrate errors
 impl From<MigrateError> for ApiError {
     fn from(err: MigrateError) -> Self {
         Self::new(format!("Migrate error: {}", err), 500)
     }
 }
 
-// Implement From for UUID errors
 impl From<uuid::Error> for ApiError {
     fn from(err: uuid::Error) -> Self {
         Self::new(format!("Invalid UUID: {}", err), 400)
     }
 }
 
-// Implement IntoResponse for Axum
 impl axum::response::IntoResponse for ApiError {
     fn into_response(self) -> axum::response::Response {
         let status = axum::http::StatusCode::from_u16(self.code)
