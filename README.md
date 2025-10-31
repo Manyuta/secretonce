@@ -15,8 +15,3 @@ Secrets are encrypted at rest using modern cryptography and optionally protected
 - REST API for creating and retrieving secrets.
 - Web interface to view secrets.
 
-### Security
-
-- Secrets are encrypted at rest using ChaCha20-Poly1305.
-- Optional passphrase is hashed with Argon2.
-- Secrets are deleted automatically after expiration or maximum views.
