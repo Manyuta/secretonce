@@ -193,7 +193,10 @@ pub async fn view_secret_page(
     if ttl_remaining <= 0 {
         tracing::info!("Secret expired, deleting: {}", id);
 
-        let _ = state.storage.delete_secret(&id).await;
+        if let Err(e) = state.storage.delete_secret(&id).await {
+            tracing::error!("Failed to delete a secret: {e}");
+        }
+
         let html = SECRET_HTML
             .replace("{{SECRET_VALUE}}", "Secret has expired")
             .replace("{{TTL_REMAINING}}", "0")
@@ -204,7 +207,11 @@ pub async fn view_secret_page(
     // Check if max views reached
     if secret.access_count >= secret.max_views {
         tracing::info!("Secret max views reached, deleting: {}", id);
-        let _ = state.storage.delete_secret(&id).await;
+
+        if let Err(e) = state.storage.delete_secret(&id).await {
+            tracing::error!("Failed to delete a secret: {e}");
+        }
+
         let html = SECRET_HTML
             .replace("{{SECRET_VALUE}}", "Secret has already been viewed")
             .replace("{{TTL_REMAINING}}", "0")
@@ -468,7 +475,6 @@ pub async fn get_secret_metadata(
     }
 
     let response = SecretMetadataResponse {
-        // recipient: secret.metadata.recipient,
         passphrase_required: secret.passphrase_required,
         views_remaining: secret.max_views.saturating_sub(secret.access_count),
         ttl_remaining,
