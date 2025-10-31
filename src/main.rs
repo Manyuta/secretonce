@@ -1,10 +1,6 @@
-use secretonce::config::Config;
-
-use secretonce::error::ApiError;
-use secretonce::router;
 use secretonce::state::AppState;
+use secretonce::{config::Config, error::ApiError, router};
 use tower_http::trace::TraceLayer;
-use tracing_subscriber;
 
 #[tokio::main]
 async fn main() -> Result<(), ApiError> {

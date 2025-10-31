@@ -34,7 +34,7 @@ const SECRET_HTML: &str = include_str!("../templates/display_secret.html");
 const PASSPHRASE_FORM_TEMPLATE: &str = include_str!("../templates/passphrase_input_form.html");
 
 pub async fn verify_passphrase(
-    State(state): State<crate::state::AppState>,
+    State(state): State<AppState>,
     Form(form): Form<VerifyPassphraseForm>,
 ) -> SecretResponse {
     let id = match Uuid::parse_str(&form.secret_id) {
@@ -80,12 +80,16 @@ pub async fn verify_passphrase(
 
     // Check if secret has expired
     let expires_at = secret.created_at + time::Duration::minutes(secret.ttl_minutes);
+
     let ttl_remaining = (expires_at - time::OffsetDateTime::now_utc())
         .whole_minutes()
         .max(0);
 
     if ttl_remaining <= 0 {
-        let _ = state.storage.delete_secret(&id).await;
+        if let Err(e) = state.storage.delete_secret(&id).await {
+            tracing::error!("Failed to delete secret {}: {}", id, e);
+        }
+
         return SecretResponse::Redirect(Redirect::to(&format!(
             "/secret?key={}&error=expired",
             form.secret_id
@@ -94,7 +98,10 @@ pub async fn verify_passphrase(
 
     // Check if max views reached
     if secret.access_count >= secret.max_views {
-        let _ = state.storage.delete_secret(&id).await;
+        if let Err(e) = state.storage.delete_secret(&id).await {
+            tracing::error!("Failed to delete a secret {}: {}", id, e);
+        }
+
         return SecretResponse::Redirect(Redirect::to(&format!(
             "/secret?key={}&error=already_viewed",
             form.secret_id
@@ -119,7 +126,9 @@ pub async fn verify_passphrase(
     let mut updated_secret = secret.clone();
     updated_secret.access_count += 1;
 
-    if let Err(_) = state.storage.update_secret(updated_secret).await {
+    if let Err(e) = state.storage.update_secret(updated_secret).await {
+        tracing::error!("Failec to update secret {}: {}", id, e);
+
         return SecretResponse::Redirect(Redirect::to(&format!(
             "/secret?key={}&error=update_error",
             form.secret_id
@@ -256,98 +265,6 @@ pub async fn view_secret_page(
     Html(html)
 }
 
-pub async fn _view_secret_page(
-    State(state): State<AppState>,
-    Path(metadata_key): Path<String>,
-) -> impl IntoResponse {
-    //let metadata_key = query.key;
-    tracing::info!("metadata_key {}", metadata_key);
-
-    let id = match Uuid::parse_str(&metadata_key) {
-        Ok(id) => id,
-        Err(_) => {
-            return Html(
-                SECRET_HTML
-                    .replace("{{SECRET_VALUE}}", "Invalid secret URL")
-                    .replace("{{TTL_REMAINING}}", "0"),
-            );
-        }
-    };
-
-    // Try to retrieve the secret without passphrase first
-    let result = state.storage.get_secret(&id).await;
-
-    let secret = match result {
-        Ok(Some(secret)) => secret,
-        Ok(None) => {
-            return Html(
-                SECRET_HTML
-                    .replace("{{SECRET_VALUE}}", "Secret not found or already viewed")
-                    .replace("{{TTL_REMAINING}}", "0"),
-            );
-        }
-        Err(_) => {
-            return Html(
-                SECRET_HTML
-                    .replace("{{SECRET_VALUE}}", "Error retrieving secret")
-                    .replace("{{TTL_REMAINING}}", "0"),
-            );
-        }
-    };
-
-    // Check if secret has expired
-    let expires_at = secret.created_at + time::Duration::minutes(secret.ttl_minutes);
-    let ttl_remaining = (expires_at - time::OffsetDateTime::now_utc())
-        .whole_minutes()
-        .max(0);
-
-    if ttl_remaining <= 0 {
-        let _ = state.storage.delete_secret(&id).await;
-        return Html(
-            SECRET_HTML
-                .replace("{{SECRET_VALUE}}", "Secret has expired")
-                .replace("{{TTL_REMAINING}}", "0"),
-        );
-    }
-
-    // Check if max views reached
-    if secret.access_count >= secret.max_views {
-        let _ = state.storage.delete_secret(&id).await;
-        return Html(
-            SECRET_HTML
-                .replace("{{SECRET_VALUE}}", "Secret has already been viewed")
-                .replace("{{TTL_REMAINING}}", "0"),
-        );
-    }
-
-    // Try to decrypt the secret
-    let decrypted_secret = match state
-        .encryption
-        .decrypt(&secret.ciphertext, &secret.secret_key)
-    {
-        Ok(value) => value,
-        Err(_) => {
-            return Html(
-                SECRET_HTML
-                    .replace("{{SECRET_VALUE}}", "Error decrypting secret")
-                    .replace("{{TTL_REMAINING}}", "0"),
-            );
-        }
-    };
-
-    // Update access count (this consumes one view)
-    let mut updated_secret = secret.clone();
-    updated_secret.access_count += 1;
-    let _ = state.storage.update_secret(updated_secret).await;
-
-    let html = SECRET_HTML
-        .replace("{{SECRET_VALUE}}", &decrypted_secret)
-        //.replace("{{RECIPIENT}}", &recipient)
-        .replace("{{TTL_REMAINING}}", &ttl_remaining.to_string());
-
-    Html(html)
-}
-
 pub async fn create_secret(
     State(state): State<AppState>,
     Json(req): Json<CreateSecretRequest>,
@@ -446,7 +363,6 @@ pub async fn create_secret(
         secret_url,
         ttl,
         created_at: time::OffsetDateTime::now_utc(),
-        // recipient: req.recipient.clone(),
     };
 
     tracing::debug!("Secret created successfully: {}", response.metadata_key);
@@ -469,14 +385,19 @@ pub async fn retrieve_secret(
 
     // Check if secret has expired
     let expires_at = secret.created_at + time::Duration::minutes(secret.ttl_minutes);
+
     if expires_at < time::OffsetDateTime::now_utc() {
-        let _ = state.storage.delete_secret(&id);
+        if let Err(e) = state.storage.delete_secret(&id).await {
+            tracing::error!("Failed to delete secret {}: {}", id, e);
+        }
         return Err(ApiError::new("Secret not found", 404));
     }
 
     // Check if max views reached
     if secret.access_count >= secret.max_views {
-        let _ = state.storage.delete_secret(&id);
+        if let Err(e) = state.storage.delete_secret(&id).await {
+            tracing::error!("Failed to delete secret {}: {}", id, e);
+        }
         return Err(ApiError::new("Secret not found", 404));
     }
 
@@ -520,50 +441,6 @@ pub async fn retrieve_secret(
     };
 
     Ok(Json(response))
-}
-
-pub async fn get_secret_metadata(
-    State(state): State<AppState>,
-    Path(metadata_key): Path<String>,
-) -> ApiResult<impl IntoResponse> {
-    let id = Uuid::parse_str(&metadata_key).map_err(|_| ApiError::new("Invalid secret ID", 400))?;
-
-    let secret = state
-        .storage
-        .get_secret(&id)
-        .await?
-        .ok_or_else(|| ApiError::new("Secret not found", 404))?;
-
-    let expires_at = secret.created_at + time::Duration::minutes(secret.ttl_minutes);
-    let ttl_remaining = (expires_at - time::OffsetDateTime::now_utc())
-        .whole_minutes()
-        .max(0);
-
-    if ttl_remaining <= 0 {
-        let _ = state.storage.delete_secret(&id);
-        return Err(ApiError::new("Secret not found", 404));
-    }
-
-    let response = SecretMetadataResponse {
-        // recipient: secret.metadata.recipient,
-        passphrase_required: secret.passphrase_required,
-        views_remaining: secret.max_views.saturating_sub(secret.access_count),
-        ttl_remaining,
-        created_at: secret.created_at,
-    };
-
-    Ok(Json(response))
-}
-
-pub async fn delete_secret(
-    State(state): State<AppState>,
-    Path(metadata_key): Path<String>,
-) -> ApiResult<impl IntoResponse> {
-    let id = Uuid::parse_str(&metadata_key).map_err(|_| ApiError::new("Invalid secret ID", 400))?;
-
-    state.storage.delete_secret(&id).await?;
-
-    Ok(axum::http::StatusCode::NO_CONTENT)
 }
 
 #[derive(serde::Serialize)]

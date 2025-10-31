@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        body {
+               body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             max-width: 600px;
             margin: 0 auto;
@@ -52,6 +52,15 @@
             padding: 10px;
             border-radius: 4px;
         }
+        .show-password {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .show-password input {
+            width: auto;
+            margin-right: 8px;
+        }
     </style>
 </head>
 <body>
@@ -64,6 +73,10 @@
             <input type="number" id="ttl" placeholder="TTL in minutes (default: 1440)" min="1" max="10080">
             <input type="number" id="maxViews" placeholder="Max views (default: 1)" min="1" max="10">
             <input type="password" id="passphrase" placeholder="Passphrase (optional)">
+              <div class="show-password">
+                <input type="checkbox" id="showPassword" onchange="togglePassword()">
+                <label for="showPassword">Show passphrase</label>
+            </div>
             <button type="submit">Create Secret</button>
         </form>
 
@@ -81,6 +94,18 @@
         const resultDiv = document.getElementById('result');
         const secretUrlDiv = document.getElementById('secretUrl');
         const copyBtn = document.getElementById('copyBtn');
+
+          function togglePassword() {
+            const passwordInput = document.getElementById('passphrase');
+            const showPasswordCheckbox = document.getElementById('showPassword');
+            
+            if (showPasswordCheckbox.checked) {
+                passwordInput.type = 'text';
+            } else {
+                passwordInput.type = 'password';
+            }
+        }
+
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -126,6 +151,15 @@
                 });
             }
         });
+
+        function showPassphrase() {
+            let x = document.getElementById("input");
+            if (x.type === "password") {
+                x.type = "text";
+            }else{
+                x.type = "password";
+            }
+        }
     </script>
 </body>
 </html>

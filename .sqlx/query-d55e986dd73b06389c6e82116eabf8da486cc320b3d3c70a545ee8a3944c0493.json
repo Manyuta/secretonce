@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT \n                id, ciphertext, secret_key, passphrase, recipient, passphrase_required,\n                burn_after_reading, access_count, max_views, ttl_minutes, created_at\n            FROM secrets \n            WHERE id = $1 AND expires_at > NOW()\n            ",
+  "query": "\n            SELECT \n                id, ciphertext, secret_key, passphrase, passphrase_required,\n                 access_count, max_views, ttl_minutes, created_at\n            FROM secrets \n            WHERE id = $1 AND expires_at > NOW()\n            ",
   "describe": {
     "columns": [
       {
@@ -25,36 +25,26 @@
       },
       {
         "ordinal": 4,
-        "name": "recipient",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 5,
         "name": "passphrase_required",
         "type_info": "Bool"
       },
       {
-        "ordinal": 6,
-        "name": "burn_after_reading",
-        "type_info": "Bool"
-      },
-      {
-        "ordinal": 7,
+        "ordinal": 5,
         "name": "access_count",
         "type_info": "Int4"
       },
       {
-        "ordinal": 8,
+        "ordinal": 6,
         "name": "max_views",
         "type_info": "Int4"
       },
       {
-        "ordinal": 9,
+        "ordinal": 7,
         "name": "ttl_minutes",
         "type_info": "Int4"
       },
       {
-        "ordinal": 10,
+        "ordinal": 8,
         "name": "created_at",
         "type_info": "Timestamptz"
       }
@@ -69,8 +59,6 @@
       false,
       false,
       true,
-      true,
-      false,
       false,
       false,
       false,
@@ -78,5 +66,5 @@
       false
     ]
   },
-  "hash": "ce4190774cdec90c1920041a5e0c10365cd9fa1330180f0887d3896d64d9cde3"
+  "hash": "d55e986dd73b06389c6e82116eabf8da486cc320b3d3c70a545ee8a3944c0493"
 }
