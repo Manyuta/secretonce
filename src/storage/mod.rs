@@ -3,7 +3,7 @@ mod postgres;
 use async_trait::async_trait;
 use uuid::Uuid;
 
-use crate::error::ApiError;
+use crate::ApiError;
 use crate::models::Secret;
 
 pub type StorageResult<T> = Result<T, ApiError>;

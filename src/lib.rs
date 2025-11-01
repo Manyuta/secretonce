@@ -1,16 +1,17 @@
+pub mod api;
 pub mod config;
+pub mod dto;
 pub mod encryption;
-pub mod error;
-pub mod handlers;
 pub mod models;
 pub mod router;
 pub mod state;
 pub mod storage;
+pub mod web;
 
 pub use config::*;
+pub use dto::*;
 pub use encryption::*;
-pub use error::*;
-pub use handlers::*;
+
 pub use models::*;
 pub use router::*;
 pub use state::*;

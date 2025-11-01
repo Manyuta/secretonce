@@ -1,4 +1,5 @@
 use crate::ApiError;
+use crate::config::Config;
 use crate::encryption::EncryptionService;
 use crate::storage::{PostgresStorage, SecretStorage};
 use std::sync::Arc;
@@ -11,10 +12,9 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub async fn new(config: crate::config::Config) -> Result<Self, ApiError> {
+    pub async fn new(config: Config) -> Result<Self, ApiError> {
         let storage: Arc<dyn SecretStorage> = {
-            let postgres_storage =
-                PostgresStorage::new(&config.database.connection_string()).await?;
+            let postgres_storage = PostgresStorage::new(&config).await?;
             Arc::new(postgres_storage)
         };
 

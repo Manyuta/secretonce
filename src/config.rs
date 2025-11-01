@@ -21,6 +21,7 @@ pub struct SecretsConfig {
     pub default_max_views: u32,
     pub max_max_views: u32,
     pub cleanup_interval_seconds: u64,
+    pub base_url: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]

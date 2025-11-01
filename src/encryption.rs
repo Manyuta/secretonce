@@ -120,3 +120,196 @@ impl EncryptionService {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_generate_key_returns_base64_string() {
+        let key = EncryptionService::generate_key();
+
+        // Should be a valid base64 string
+        assert!(base64.decode(&key).is_ok());
+
+        // Decoded key should have correct length
+        let key_bytes = base64.decode(&key).unwrap();
+        assert_eq!(key_bytes.len(), EncryptionService::KEY_LENGTH);
+    }
+
+    #[test]
+    fn test_generate_key_produces_unique_keys() {
+        let key1 = EncryptionService::generate_key();
+        let key2 = EncryptionService::generate_key();
+
+        assert_ne!(key1, key2);
+    }
+
+    #[test]
+    fn test_encrypt_decrypt_works() {
+        let service = EncryptionService::new();
+        let key = EncryptionService::generate_key();
+        let plaintext = "Hello! This is a test message.";
+
+        let ciphertext = service.encrypt(plaintext, &key).unwrap();
+        let decrypted = service.decrypt(&ciphertext, &key).unwrap();
+
+        assert_eq!(plaintext, decrypted);
+    }
+
+    #[test]
+    fn test_encrypt_decrypt_empty_string() {
+        let service = EncryptionService::new();
+        let key = EncryptionService::generate_key();
+        let plaintext = "";
+
+        let ciphertext = service.encrypt(plaintext, &key).unwrap();
+        let decrypted = service.decrypt(&ciphertext, &key).unwrap();
+
+        assert_eq!(plaintext, decrypted);
+    }
+
+    #[test]
+    fn test_encrypt_decrypt_special_characters() {
+        let service = EncryptionService::new();
+        let key = EncryptionService::generate_key();
+        let plaintext = "Special chars:ñáéíÑÑÑ";
+
+        let ciphertext = service.encrypt(plaintext, &key).unwrap();
+        let decrypted = service.decrypt(&ciphertext, &key).unwrap();
+
+        assert_eq!(plaintext, decrypted);
+    }
+
+    #[test]
+    fn test_encrypt_with_invalid_key_length() {
+        let service = EncryptionService::new();
+        let invalid_key = base64.encode("too-short"); // Key that's too short
+
+        let result = service.encrypt("test message", &invalid_key);
+        assert!(result.is_err());
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("Invalid key length")
+        );
+    }
+
+    #[test]
+    fn test_encrypt_with_invalid_base64_key() {
+        let service = EncryptionService::new();
+        let invalid_key = "not-valid-base64!@#$";
+
+        let result = service.encrypt("test message", invalid_key);
+        assert!(result.is_err());
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("Base64 decode error")
+        );
+    }
+
+    #[test]
+    fn test_decrypt_with_wrong_key() {
+        let service = EncryptionService::new();
+        let key1 = EncryptionService::generate_key();
+        let key2 = EncryptionService::generate_key();
+        let plaintext = "Secret message";
+
+        let ciphertext = service.encrypt(plaintext, &key1).unwrap();
+        let result = service.decrypt(&ciphertext, &key2);
+
+        assert!(result.is_err());
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("Decryption failed")
+        );
+    }
+
+    #[test]
+    fn test_decrypt_with_short_ciphertext() {
+        let service = EncryptionService::new();
+        let key = EncryptionService::generate_key();
+        let short_ciphertext = base64.encode("short");
+
+        let result = service.decrypt(&short_ciphertext, &key);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("too short"));
+    }
+
+    #[test]
+    fn test_hash_passphrase_creates_valid_hash() {
+        let passphrase = "my_secure_password123";
+
+        let hash = EncryptionService::hash_passphrase(passphrase).unwrap();
+
+        // Should be a valid password hash string
+        assert!(PasswordHash::new(&hash).is_ok());
+        // Should contain argon2 identifier
+        assert!(hash.contains("$argon2"));
+    }
+
+    #[test]
+    fn test_hash_passphrase_different_salts_produce_different_hashes() {
+        let passphrase = "same_password";
+
+        let hash1 = EncryptionService::hash_passphrase(passphrase).unwrap();
+        let hash2 = EncryptionService::hash_passphrase(passphrase).unwrap();
+
+        // Same password should produce different hashes due to different salts
+        assert_ne!(hash1, hash2);
+    }
+
+    #[test]
+    fn test_verify_passphrase_correct_password() {
+        let passphrase = "correct_password";
+        let hash = EncryptionService::hash_passphrase(passphrase).unwrap();
+
+        let result = EncryptionService::verify_passphrase(passphrase, &hash).unwrap();
+
+        assert!(result);
+    }
+
+    #[test]
+    fn test_verify_passphrase_incorrect_password() {
+        let passphrase = "correct_password";
+        let wrong_passphrase = "wrong_password";
+        let hash = EncryptionService::hash_passphrase(passphrase).unwrap();
+
+        let result = EncryptionService::verify_passphrase(wrong_passphrase, &hash).unwrap();
+
+        assert!(!result);
+    }
+
+    #[test]
+    fn test_verify_passphrase_invalid_hash_format() {
+        let passphrase = "some_password";
+        let invalid_hash = "not_a_valid_argon2_hash";
+
+        let result = EncryptionService::verify_passphrase(passphrase, invalid_hash);
+
+        assert!(result.is_err());
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("Password hash parsing error")
+        );
+    }
+
+    #[test]
+    fn test_encrypt_decrypt_large_message() {
+        let service = EncryptionService::new();
+        let key = EncryptionService::generate_key();
+        let plaintext = "A".repeat(10_000); // 10KB of data
+
+        let ciphertext = service.encrypt(&plaintext, &key).unwrap();
+        let decrypted = service.decrypt(&ciphertext, &key).unwrap();
+
+        assert_eq!(plaintext, decrypted);
+    }
+}

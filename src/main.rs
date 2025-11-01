@@ -1,5 +1,5 @@
 use secretonce::state::AppState;
-use secretonce::{config::Config, error::ApiError, router};
+use secretonce::{ApiError, config::Config, router};
 use tower_http::trace::TraceLayer;
 
 #[tokio::main]

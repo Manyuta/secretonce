@@ -1,9 +1,11 @@
+use crate::config::Config;
 use async_trait::async_trait;
+use secrecy::ExposeSecret;
 use sqlx::postgres::{PgPool, PgPoolOptions};
 
 use uuid::Uuid;
 
-use crate::error::ApiError;
+use crate::ApiError;
 use crate::models::{Secret, SecretFromRow};
 use crate::storage::{SecretStorage, StorageResult};
 
@@ -13,10 +15,10 @@ pub struct PostgresStorage {
 }
 
 impl PostgresStorage {
-    pub async fn new(database_url: &str) -> Result<Self, ApiError> {
+    pub async fn new(config: &Config) -> Result<Self, ApiError> {
         let pool = PgPoolOptions::new()
-            .max_connections(10)
-            .connect(database_url)
+            .max_connections(config.database.max_connections)
+            .connect(&config.database.connection_string())
             .await?;
 
         // Run migrations
@@ -40,7 +42,7 @@ impl SecretStorage for PostgresStorage {
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
             "#,
             secret.id,
-            secret.ciphertext,
+            secret.ciphertext.expose_secret(),
             secret.secret_key,
             secret.passphrase,
             secret.passphrase_required,
@@ -74,7 +76,7 @@ impl SecretStorage for PostgresStorage {
         if let Some(row) = row {
             let secret = Secret {
                 id: row.id,
-                ciphertext: row.ciphertext,
+                ciphertext: row.ciphertext.into(),
                 secret_key: row.secret_key,
                 passphrase: row.passphrase,
                 passphrase_required: row.passphrase_required,
@@ -103,7 +105,7 @@ impl SecretStorage for PostgresStorage {
         WHERE id = $1
         "#,
             secret.id,
-            secret.ciphertext,
+            secret.ciphertext.expose_secret(),
             secret.secret_key,
             secret.passphrase,
             secret.passphrase_required,
