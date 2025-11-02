@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO secrets (\n                id, ciphertext, passphrase_required,\n                access_count, max_views, ttl_minutes,\n                created_at, expires_at\n            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Bool",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "cbef6f4b8f1f2c7f701d537dff97468a12396a47b9aea46334090f97996eec54"
+}

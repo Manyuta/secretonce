@@ -3,9 +3,9 @@ server:
 database:
   host: "localhost"
   port: 5432
-  username: "capstone2"
-  password: "cpastonepassword"
-  database_name: "secrets_db"
+  username: "capstone_user"
+  password: "mystrongpassword"
+  database_name: "secrets"
   max_connections: 10
 secrets:
   default_ttl: 1400
@@ -13,5 +13,6 @@ secrets:
   default_max_views: 1 
   max_max_views: 10 
   cleanup_interval_seconds: 300 # 5 min
+
   base_url: "http://localhost:8000"
 

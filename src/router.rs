@@ -1,37 +1,39 @@
 use crate::state::AppState;
 use axum::{
     Router,
-    response::Html,
     routing::{get, post},
 };
 use tower_http::cors::CorsLayer;
+use tower_http::services::ServeDir;
 
 pub fn create_router(state: AppState) -> Router {
+    // Serve static files from React build
+    let static_files_service = ServeDir::new("frontend/build")
+        .not_found_service(ServeDir::new("frontend/build/index.html"));
+
     Router::new()
         .route(
-            "/",
-            get(|| async { Html(include_str!("../templates/index.html")) }),
+            "/secret/:metadata_key",
+            get(crate::web::handlers::get_secret),
         )
         .route(
             "/secret/:metadata_key",
-            get(crate::web::handlers::view_secret_page),
+            post(crate::web::handlers::retrieve_secret),
         )
-        .route(
-            "/secret/verify",
-            post(crate::web::handlers::verify_passphrase),
-        )
-        .route("/health", get(crate::api::handlers::health_check))
-        .route("/api/v1/secret", post(crate::api::handlers::create_secret))
+        .route("/secret", post(crate::web::handlers::create_secret))
+        .route("/health", get(crate::web::handlers::health_check))
+        .route("/api/v1/secret", post(crate::web::handlers::create_secret))
         .route(
             "/api/v1/secret/:metadata_key",
-            post(crate::api::handlers::retrieve_secret)
-                .get(crate::api::handlers::get_secret_metadata)
-                .delete(crate::api::handlers::delete_secret),
+            post(crate::web::handlers::retrieve_secret)
+                .get(crate::web::handlers::get_secret_metadata)
+                .delete(crate::web::handlers::delete_secret),
         )
         .route(
             "/api/v1/internal/secret/:metadata_key",
-            get(crate::api::handlers::get_secret),
+            get(crate::web::handlers::get_secret),
         )
+        .fallback_service(static_files_service)
         .layer(CorsLayer::permissive())
         .with_state(state)
 }

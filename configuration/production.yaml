@@ -2,9 +2,9 @@ server:
   host: 0.0.0.0
   port: 8000
 database:
-  require_ssl: false
+  require_ssl: true
   host: "db"
   port: 5432
-  username: "capstone_user"
-  password: "mystrongpassword"
-  database_name: "secrets"
+  username: "cuser"
+  password: "mystringpassword"
+  database_name: "secret"

@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE secrets \n        SET \n            ciphertext = $2, \n            passphrase_required = $3,\n            access_count = $4, max_views = $5, ttl_minutes = $6,\n            created_at = $7, expires_at = $8, updated_at = NOW()\n        WHERE id = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Bool",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e338fddfd51802a49b13e02f50b0267bf3ee2fbe30da1e3e41a5bd0b381179c1"
+}

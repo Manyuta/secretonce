@@ -1,6 +1,5 @@
 use crate::config::Config;
 use async_trait::async_trait;
-use secrecy::ExposeSecret;
 use sqlx::postgres::{PgPool, PgPoolOptions};
 
 use uuid::Uuid;
@@ -36,15 +35,13 @@ impl SecretStorage for PostgresStorage {
         sqlx::query!(
             r#"
             INSERT INTO secrets (
-                id, ciphertext, secret_key, passphrase, passphrase_required,
+                id, ciphertext, passphrase_required,
                 access_count, max_views, ttl_minutes,
                 created_at, expires_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             "#,
             secret.id,
-            secret.ciphertext.expose_secret(),
-            secret.secret_key,
-            secret.passphrase,
+            secret.ciphertext,
             secret.passphrase_required,
             secret.access_count as i32,
             secret.max_views as i32,
@@ -63,7 +60,7 @@ impl SecretStorage for PostgresStorage {
             SecretFromRow,
             r#"
             SELECT 
-                id, ciphertext, secret_key, passphrase, passphrase_required,
+                id, ciphertext, passphrase_required,
                  access_count, max_views, ttl_minutes, created_at
             FROM secrets 
             WHERE id = $1 AND expires_at > NOW()
@@ -76,9 +73,7 @@ impl SecretStorage for PostgresStorage {
         if let Some(row) = row {
             let secret = Secret {
                 id: row.id,
-                ciphertext: row.ciphertext.into(),
-                secret_key: row.secret_key,
-                passphrase: row.passphrase,
+                ciphertext: row.ciphertext,
                 passphrase_required: row.passphrase_required,
                 access_count: row.access_count as u32,
                 max_views: row.max_views as u32,
@@ -98,16 +93,14 @@ impl SecretStorage for PostgresStorage {
             r#"
         UPDATE secrets 
         SET 
-            ciphertext = $2, secret_key = $3, passphrase = $4,
-            passphrase_required = $5,
-            access_count = $6, max_views = $7, ttl_minutes = $8,
-            created_at = $9, expires_at = $10, updated_at = NOW()
+            ciphertext = $2, 
+            passphrase_required = $3,
+            access_count = $4, max_views = $5, ttl_minutes = $6,
+            created_at = $7, expires_at = $8, updated_at = NOW()
         WHERE id = $1
         "#,
             secret.id,
-            secret.ciphertext.expose_secret(),
-            secret.secret_key,
-            secret.passphrase,
+            secret.ciphertext,
             secret.passphrase_required,
             secret.access_count as i32,
             secret.max_views as i32,
