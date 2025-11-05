@@ -29,6 +29,7 @@ impl EncryptionService {
     pub fn derive_key(passphrase: &str, context: &[u8]) -> Result<[u8; Self::KEY_LENGTH]> {
         let hk = Hkdf::<Sha256>::new(Some(context), passphrase.as_bytes());
         let mut key = [0u8; Self::KEY_LENGTH];
+
         hk.expand(&[], &mut key)
             .map_err(|e| anyhow!("HKDF key derivation failed: {e}"))?;
 

@@ -58,12 +58,15 @@ async fn test_create_and_retrieve_secret() {
 
     let create_json: serde_json::Value = create_resp.json().await.unwrap();
     let metadata_key = create_json["metadata_key"].as_str().unwrap();
+    let decryption_key = create_json["decryption_key"].as_str().unwrap();
+
+    dbg!(decryption_key);
 
     // 2. Retrieve the secret
     let retrieve_resp = client
         .post(&format!("{}/api/v1/secret/{}", base_url, metadata_key))
         .header("Content-Type", "application/json")
-        .body(json!({ "passphrase": null }).to_string())
+        .body(json!({ "decryption_key": decryption_key }).to_string())
         .send()
         .await
         .expect("Failed to retrieve secret");

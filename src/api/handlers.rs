@@ -1,3 +1,4 @@
+use secrecy::ExposeSecret;
 use time::OffsetDateTime;
 use uuid::Uuid;
 
@@ -34,7 +35,7 @@ impl ApiHandler {
 
         let secret = Secret {
             id: secret_id,
-            ciphertext,
+            ciphertext: ciphertext.into(),
             passphrase_required: request.passphrase.is_some(),
             access_count: 0,
             max_views: request.max_views.unwrap_or(1),
@@ -92,9 +93,11 @@ impl ApiHandler {
                 .passphrase
                 .ok_or_else(|| anyhow::anyhow!("Passphrase required for this secret"))?;
 
-            state
-                .encryption
-                .decrypt_with_passphrase(&secret.ciphertext, &passphrase, &secret_id)?
+            state.encryption.decrypt_with_passphrase(
+                &secret.ciphertext.expose_secret(),
+                &passphrase,
+                &secret_id,
+            )?
         } else {
             // Ephemeral secret - requires decryption key
             let decryption_key = request
@@ -103,7 +106,7 @@ impl ApiHandler {
 
             state
                 .encryption
-                .decrypt_ephemeral(&secret.ciphertext, &decryption_key)?
+                .decrypt_ephemeral(&secret.ciphertext.expose_secret(), &decryption_key)?
         };
 
         // Update access count

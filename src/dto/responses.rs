@@ -51,12 +51,6 @@ pub enum EncryptionType {
     Ephemeral,  // User receives decryption key, must provide it for retrieval
 }
 
-#[derive(serde::Deserialize)]
-pub struct VerifyPassphraseForm {
-    pub secret_id: String,
-    pub passphrase: String,
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SecretMetadataResponse {
     pub encryption_type: EncryptionType,
@@ -69,13 +63,10 @@ pub struct SecretMetadataResponse {
     pub created_at: OffsetDateTime,
 }
 
-#[derive(Debug, Serialize)]
-pub enum ErrorCode {
-    SecretNotFound,
-    PassphraseRequired,
-    DecryptionKeyRequired,
-    MaxViewsExceeded,
-    TtlExpired,
-    DecryptionFailed,
-    InvalidInput,
+#[derive(serde::Serialize)]
+pub struct HealthCheckResponse {
+    pub status: String,
+    pub database: String,
+    pub timestamp: time::OffsetDateTime,
+    pub version: String,
 }

@@ -11,7 +11,7 @@ function App() {
     <div className="App">
       <header className="App-header">
         <h1>Secret Share</h1>
-        <nav>
+        {/* <nav>
           <button
             onClick={() => setCurrentView('create')}
             className={currentView === 'create' ? 'active' : ''}
@@ -24,7 +24,7 @@ function App() {
           >
             View Secret
           </button>
-        </nav>
+        </nav>  */}
       </header>
 
       <main>

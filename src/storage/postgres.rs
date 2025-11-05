@@ -1,5 +1,6 @@
 use crate::config::Config;
 use async_trait::async_trait;
+use secrecy::ExposeSecret;
 use sqlx::postgres::{PgPool, PgPoolOptions};
 
 use uuid::Uuid;
@@ -30,6 +31,8 @@ impl PostgresStorage {
 #[async_trait]
 impl SecretStorage for PostgresStorage {
     async fn create_secret(&self, secret: Secret) -> StorageResult<()> {
+        dbg!(&secret);
+
         let expires_at = secret.created_at + time::Duration::minutes(secret.ttl_minutes);
 
         sqlx::query!(
@@ -41,7 +44,7 @@ impl SecretStorage for PostgresStorage {
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             "#,
             secret.id,
-            secret.ciphertext,
+            secret.ciphertext.expose_secret(),
             secret.passphrase_required,
             secret.access_count as i32,
             secret.max_views as i32,
@@ -70,10 +73,12 @@ impl SecretStorage for PostgresStorage {
         .fetch_optional(&self.pool)
         .await?;
 
+        dbg!(&row);
+
         if let Some(row) = row {
             let secret = Secret {
                 id: row.id,
-                ciphertext: row.ciphertext,
+                ciphertext: row.ciphertext.into(),
                 passphrase_required: row.passphrase_required,
                 access_count: row.access_count as u32,
                 max_views: row.max_views as u32,
@@ -100,7 +105,7 @@ impl SecretStorage for PostgresStorage {
         WHERE id = $1
         "#,
             secret.id,
-            secret.ciphertext,
+            secret.ciphertext.expose_secret(),
             secret.passphrase_required,
             secret.access_count as i32,
             secret.max_views as i32,

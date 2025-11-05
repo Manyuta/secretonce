@@ -1,7 +1,7 @@
 use axum::{
     Json,
     extract::{Path, State},
-    response::{Html, IntoResponse, Redirect, Response},
+    response::IntoResponse,
 };
 
 use crate::{ApiError, dto::*, handlers::ApiHandler, state::AppState};
@@ -9,26 +9,6 @@ use crate::{ApiError, dto::*, handlers::ApiHandler, state::AppState};
 use uuid::Uuid;
 
 pub type ApiResult<T> = Result<T, ApiError>;
-
-#[derive(serde::Deserialize)]
-pub struct VerifyPassphraseForm {
-    pub secret_id: String,
-    pub passphrase: String,
-}
-
-pub enum SecretResponse {
-    Html(Html<String>),
-    Redirect(Redirect),
-}
-
-impl IntoResponse for SecretResponse {
-    fn into_response(self) -> Response {
-        match self {
-            SecretResponse::Html(html) => html.into_response(),
-            SecretResponse::Redirect(redirect) => redirect.into_response(),
-        }
-    }
-}
 
 pub async fn create_secret(
     State(state): State<AppState>,
@@ -77,7 +57,9 @@ pub async fn create_secret(
     let secret_response = match ApiHandler.create_secret(req, state).await {
         Ok(response) => response,
         Err(e) => {
-            return Err(ApiError::new(e.to_string(), 500));
+            tracing::error!("Create secret error: {e}");
+
+            return Err(ApiError::new("Internal Server Error", 500));
         }
     };
 
@@ -108,6 +90,8 @@ pub async fn retrieve_secret(
     let response = match ApiHandler.retrieve_secret(id, req, state).await {
         Ok(response) => response,
         Err(e) => {
+            tracing::error!("retrieve secret error: {e}");
+
             return Err(ApiError::new(e.to_string(), 400));
         }
     };
@@ -124,7 +108,9 @@ pub async fn get_secret_metadata(
     let response = match ApiHandler.get_secret_metadata(id, state).await {
         Ok(response) => response,
         Err(e) => {
-            return Err(ApiError::new(e.to_string(), 400));
+            tracing::error!("Get secret metadata error: {e}");
+
+            return Err(ApiError::new("Not found", 400));
         }
     };
 
@@ -153,14 +139,6 @@ pub async fn get_secret(
     // get secret from storage
     let secret = state.storage.get_secret(&id).await?;
     Ok(Json(secret))
-}
-
-#[derive(serde::Serialize)]
-pub struct HealthCheckResponse {
-    pub status: String,
-    pub database: String,
-    pub timestamp: time::OffsetDateTime,
-    pub version: String,
 }
 
 pub async fn health_check(State(state): State<crate::state::AppState>) -> impl IntoResponse {

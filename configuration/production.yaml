@@ -5,6 +5,6 @@ database:
   require_ssl: true
   host: "db"
   port: 5432
-  username: "cuser"
-  password: "mystringpassword"
-  database_name: "secret"
+  username: ""
+  password: ""
+  database_name: ""

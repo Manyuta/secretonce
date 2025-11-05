@@ -12,16 +12,12 @@ pub fn create_router(state: AppState) -> Router {
         .not_found_service(ServeDir::new("frontend/build/index.html"));
 
     Router::new()
-        .route(
-            "/secret/:metadata_key",
-            get(crate::web::handlers::get_secret),
-        )
+        .route("/health", get(crate::web::handlers::health_check))
         .route(
             "/secret/:metadata_key",
             post(crate::web::handlers::retrieve_secret),
         )
         .route("/secret", post(crate::web::handlers::create_secret))
-        .route("/health", get(crate::web::handlers::health_check))
         .route("/api/v1/secret", post(crate::web::handlers::create_secret))
         .route(
             "/api/v1/secret/:metadata_key",

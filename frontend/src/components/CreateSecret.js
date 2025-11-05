@@ -93,13 +93,12 @@ const CreateSecret = ({ onSecretCreated }) => {
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
-    // You could add a toast notification here
     alert('Copied to clipboard!');
   };
 
   return (
     <div className="create-secret">
-      <h2>Create a New Secret</h2>
+      <h2>Create New Secret</h2>
 
       {createdSecret ? (
         <div className="secret-created">
@@ -125,7 +124,7 @@ const CreateSecret = ({ onSecretCreated }) => {
 
             {createdSecret.decryptionKey && (
               <div className="info-item">
-                <label>🔑 Decryption Key (Save this!):</label>
+                <label>Decryption Key (Save this!):</label>
                 <div className="copy-box">
                   <input
                     type="text"
@@ -141,14 +140,14 @@ const CreateSecret = ({ onSecretCreated }) => {
                   </button>
                 </div>
                 <p className="warning-text">
-                  ⚠️ This key will not be shown again. Anyone with this key can decrypt your secret.
+                  This key will not be shown again. Anyone with this key can decrypt your secret.
                 </p>
               </div>
             )}
 
             {!createdSecret.decryptionKey && (
               <div className="info-item">
-                <p>🔒 This secret is protected with a passphrase.</p>
+                <p>This secret is protected with a passphrase.</p>
               </div>
             )}
 
