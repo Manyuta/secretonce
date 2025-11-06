@@ -12,6 +12,7 @@ pub use config::*;
 pub use dto::*;
 pub use encryption::*;
 
+pub use api::*;
 pub use models::*;
 pub use router::*;
 pub use state::*;
