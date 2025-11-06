@@ -75,11 +75,6 @@ impl ApiHandler {
             return Err(anyhow::anyhow!("Secret not found"));
         }
 
-        // Validate access limits
-        if secret.access_count >= secret.max_views {
-            return Err(anyhow::anyhow!("Secret has reached maximum view limit"));
-        }
-
         // Check if max views reached
         if secret.access_count >= secret.max_views {
             state.storage.delete_secret(&secret_id).await?;
