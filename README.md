@@ -26,7 +26,7 @@ Secrets are encrypted at rest using modern cryptography and optionally protected
 
 ### Technology used:
 - **Axum** crate for server
-- **PostgresQL** for DB 
+- **PostgreSQL** for DB 
 - **Tracing** crate for logging
 - **Encryption** is done via:
   - `chacha20poly1305`(AEAD cipher)
