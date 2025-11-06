@@ -73,8 +73,6 @@ impl SecretStorage for PostgresStorage {
         .fetch_optional(&self.pool)
         .await?;
 
-        dbg!(&row);
-
         if let Some(row) = row {
             let secret = Secret {
                 id: row.id,
