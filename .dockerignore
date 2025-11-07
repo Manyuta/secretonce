@@ -1,0 +1,17 @@
+# Ignore compiled artifacts
+target/
+**/target/
+
+# Ignore local environment files
+.env
+.env.*
+*.env
+
+# Ignore version control
+.git
+.gitignore
+
+
+README.md
+*.db
+

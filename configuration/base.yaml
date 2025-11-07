@@ -1,0 +1,18 @@
+server:
+  port: 8000
+database:
+  host: "localhost"
+  port: 5432
+  username: "cuser"
+  password: "mystringpassword"
+  database_name: "secret"
+  max_connections: 10
+secrets:
+  default_ttl: 1400
+  max_ttl: 10080
+  default_max_views: 1 
+  max_max_views: 10 
+  cleanup_interval_seconds: 300 # 5 min
+
+  base_url: "http://localhost:8000"
+

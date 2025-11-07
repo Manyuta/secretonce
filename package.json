@@ -1,0 +1,12 @@
+{
+  "name": "sercetonce",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "concurrently \"cargo run\" \"cd frontend && npm start\"",
+    "build-frontend": "cd frontend && npm run build",
+    "install-deps": "cd frontend && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}

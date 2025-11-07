@@ -1,0 +1,69 @@
+name: secretonce
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: secretonce-frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - server-side
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: secretonce-backend
+    env_file:
+      - .env
+    networks:
+      - server-side
+    volumes:
+      - ./migrations:/app/migrations
+      - app-cache:/app/target
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:12-alpine
+    container_name: secretonce-db
+    restart: always
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    networks:
+      - server-side
+    ports:
+      - "5433:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME} -d ${DATABASE_NAME}"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+
+# Shared network between all services
+networks:
+  server-side:
+    driver: bridge
+
+# Persistent volumes
+volumes:
+  app-cache: {}
+  db-data: {}

@@ -1,0 +1,58 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT \n                id, ciphertext, passphrase_required,\n                 access_count, max_views, ttl_minutes, created_at\n            FROM secrets \n            WHERE id = $1 AND expires_at > NOW()\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "ciphertext",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "passphrase_required",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 3,
+        "name": "access_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "max_views",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "ttl_minutes",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "202a4bea2491966ac9236454a3b9572c38ec8403b179655946c3b101fcc469d0"
+}

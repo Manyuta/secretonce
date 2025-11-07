@@ -1,0 +1,14 @@
+CREATE TABLE IF NOT EXISTS secrets (
+  id UUID PRIMARY KEY,
+  ciphertext TEXT NOT NULL,
+  secret_key TEXT NOT NULL,
+  passphrase TEXT,
+  passphrase_required BOOLEAN NOT NULL DEFAULT false,
+  access_count INTEGER NOT NULL DEFAULT 0,
+  max_views INTEGER NOT NULL DEFAULT 1,
+  ttl_minutes INTEGER NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
